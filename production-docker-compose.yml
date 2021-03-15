@@ -1,0 +1,42 @@
+version: '3'
+
+services:
+  distro:
+    image: alpine # this would be downloaded at the run time
+    restart: always
+    container_name: Custom_alpine # Override the random container name
+    entrypoint: tail -f /dev/null # Just to keep the container up and running
+  
+  database:
+    image: postgres:latest
+    container_name: postgres_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - ../dump:/tmp/
+
+  web:
+    image: nginx
+    restart: always
+    container_name: proxy
+    ports:
+      - '80:80'
+    volumes:
+      - ./mysite.template:/etc/nginx/conf.d/mysite.template
+    environment:
+      - NGINX_HOST=sample.com
+      - NGINX_PORT=80
+
+    # so the links here are just to say that if one of those containers goes down
+    # nginx also should go down and then link back to it
+    links:
+    - database:db
+    - distro
+
+volumes:
+  data:
+    external: true # this line telling docker compose to use a pre-existing external data volume.
+
+# So this one doesn't have the name docker-compose
+# thats why we need to do docker-compose -f production-docker-compose up -d
+# To specify the file we want
